@@ -6,6 +6,13 @@ import { MapsAPILoader } from '@agm/core';
 
 import { MouseEvent } from '@agm/core';
 
+import * as firebase from 'firebase';
+import 'firebase/firestore';
+
+
+import * as geofirex from 'geofirex';
+const geo = geofirex.init(firebase);
+
 
 @Component({
   selector: 'page-home',
@@ -18,15 +25,16 @@ export class HomePage {
     public zoom: number;
 
     markers: marker[] = []
-
+    
+    
     @ViewChild("search")
     public searchElementRef;
 
   constructor(public navCtrl: NavController, private mapsAPILoader: MapsAPILoader,
               private ngZone: NgZone)  {
       this.zoom = 4;
-      this.latitude = 39.8282;
-      this.longitude = -98.5795;
+    //   this.latitude = 39.8282;
+    //   this.longitude = -98.5795;
 
       //create search FormControl
       this.searchControl = new FormControl();
@@ -42,12 +50,59 @@ export class HomePage {
   }
   
   mapClicked($event: MouseEvent) {
-      console.log($event);
+    console.log($event);
     this.markers.push({
       lat: $event.coords.lat,
       lng: $event.coords.lng,
       draggable: true
     });
+    if (confirm("Do you want to add location or query?")) {
+       
+    
+
+        const cities = geo.collection('cities');
+    
+        const point = geo.point($event.coords.lat,$event.coords.lng);
+    
+        console.log(point);
+        
+        cities.add({ name: 'Phoenix', position: point.data });
+       
+    } else {
+
+
+        console.log($event.coords.lat);
+        console.log($event.coords.lng)
+
+        this.latitude = $event.coords.lat
+        this.longitude =$event.coords.lng
+
+
+        const cities = geo.collection('cities');
+        const center = geo.point($event.coords.lat, $event.coords.lng);
+        const radius = 2;
+        const field = 'position';
+
+         const query = cities.within(center, radius, field);
+
+
+         query.subscribe(data=>{
+             console.log(data);
+
+             data.forEach(d=>{
+                   this.markers.push({
+                    lat: d.position._lat,
+                    lng: d.position._long,
+                    draggable: true
+               })
+                 
+             })
+           
+         });
+
+
+       
+    }
   }
   
   markerDragEnd(m: marker, $event: MouseEvent) {
@@ -56,43 +111,49 @@ export class HomePage {
   
 
   ionViewDidLoad() {
-      //set google maps defaults
-      this.zoom = 4;
-      this.latitude = 39.8282;
-      this.longitude = -98.5795;
+    //   //set google maps defaults
+    //   this.zoom = 4;
+    // //   this.latitude = 39.8282;
+    // //   this.longitude = -98.5795;
 
-      //create search FormControl
-      this.searchControl = new FormControl();
+    //   //create search FormControl
+    //   this.searchControl = new FormControl();
 
-      //set current position
-      this.setCurrentPosition();
+    //   //set current position
+    //   this.setCurrentPosition();
 
-      //load Places Autocomplete
-      this.mapsAPILoader.load().then(() => {
-          let nativeHomeInputBox = document.getElementById('txtHome').getElementsByTagName('input')[0];
-          let autocomplete = new google.maps.places.Autocomplete(nativeHomeInputBox, {
-              types: ["address"],
-              componentRestrictions: {country: 'pk'}
-          });
-          autocomplete.addListener("place_changed", () => {
-              this.ngZone.run(() => {
-                  //get the place result
-                  let place: google.maps.places.PlaceResult = autocomplete.getPlace();
+    //   //load Places Autocomplete
+    //   this.mapsAPILoader.load().then(() => {
+    //       let nativeHomeInputBox = document.getElementById('txtHome').getElementsByTagName('input')[0];
+    //       let autocomplete = new google.maps.places.Autocomplete(nativeHomeInputBox, {
+    //           types: ["address"],
+    //           componentRestrictions: {country: 'pk'}
+    //       });
+    //       autocomplete.addListener("place_changed", () => {
+    //           this.ngZone.run(() => {
+    //               //get the place result
+    //               let place: google.maps.places.PlaceResult = autocomplete.getPlace();
 
-                  //verify result
-                  if (place.geometry === undefined || place.geometry === null) {
-                      return;
-                  }
+    //               //verify result
+    //               if (place.geometry === undefined || place.geometry === null) {
+    //                   return;
+    //               }
 
-                  //set latitude, longitude and zoom
-                  this.latitude = place.geometry.location.lat();
-                  this.longitude = place.geometry.location.lng();
+    //               //set latitude, longitude and zoom
+    //             //   this.latitude = place.geometry.location.lat();
+    //             //   this.longitude = place.geometry.location.lng();
 
-                  console.log(this.latitude,this.longitude);
-                  this.zoom = 12;
-              });
-          });
-      });
+    //             //   this.markers.push({
+    //             //     lat: this.latitude,
+    //             //     lng: this.longitude,
+    //             //     draggable: true
+    //             //   });
+
+    //             //   console.log(this.latitude,this.longitude);
+    //               this.zoom = 10;
+    //           });
+    //       });
+    //   });
   }
 
     private setCurrentPosition() {
@@ -100,9 +161,21 @@ export class HomePage {
             navigator.geolocation.getCurrentPosition((position) => {
                 this.latitude = position.coords.latitude;
                 this.longitude = position.coords.longitude;
-                this.zoom = 12;
+                this.zoom = 18;
+
+            
+
             });
+
+
+          
         }
+    }
+
+
+
+    private query(){
+        
     }
 
 }

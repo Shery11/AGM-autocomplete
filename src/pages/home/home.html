@@ -19,17 +19,19 @@
       [latitude]="m.lat"
       [longitude]="m.lng"
       [label]="m.label"
-      [markerDraggable]="m.draggable"
+      
       (dragEnd)="markerDragEnd(m, $event)">
       
     <agm-info-window>
-      <strong>InfoWindow content</strong>
+      <!-- <strong>InfoWindow content</strong> -->
+
+      <button>Info</button>
     </agm-info-window>
     
   </agm-marker>
   
   <agm-circle [latitude]="latitude + 0.3" [longitude]="longitude" 
-      [radius]="5000"
+      [radius]="3000"
       [fillColor]="'red'"
       [circleDraggable]="true"
       [editable]="true">
